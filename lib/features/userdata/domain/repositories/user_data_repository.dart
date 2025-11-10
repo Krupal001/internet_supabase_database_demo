@@ -1,0 +1,20 @@
+import '../../../../core/utils/result.dart';
+import '../entities/user_data_entity.dart';
+
+/// Abstract repository for user data operations
+abstract class UserDataRepository {
+  /// Get all user data from API
+  Future<Result<List<UserDataEntity>>> getAllUserData();
+
+  /// Get single user data by first name
+  Future<Result<UserDataEntity>> getUserDataById(String firstName);
+
+  /// Create new user data
+  Future<Result<UserDataEntity>> createUserData(UserDataEntity userData);
+
+  /// Update existing user data
+  Future<Result<UserDataEntity>> updateUserData(UserDataEntity userData);
+
+  /// Delete user data by first name
+  Future<Result<void>> deleteUserData(String firstName);
+}
