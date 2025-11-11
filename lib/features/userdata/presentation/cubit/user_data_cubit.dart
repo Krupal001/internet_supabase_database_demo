@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_db/features/userdata/domain/usecases/get_geolocation_usecase.dart';
+import 'package:supabase_db/features/userdata/domain/usecases/search_by_geolocation_usecase.dart';
 import '../../domain/entities/user_data_entity.dart';
 import '../../domain/usecases/create_userdata_usecase.dart';
 import '../../domain/usecases/delete_userdata_usecase.dart';
@@ -12,12 +13,14 @@ class UserDataCubit extends Cubit<UserDataState> {
   final CreateUserDataUseCase createUserDataUseCase;
   final DeleteUserDataUseCase deleteUserDataUseCase;
   final GetGeolocationUseCase getGeolocationUseCase;
+  final SearchByGeolocationUseCase searchByGeolocationUseCase;
 
   UserDataCubit({
     required this.getAllUserDataUseCase,
     required this.createUserDataUseCase,
     required this.deleteUserDataUseCase,
     required this.getGeolocationUseCase,
+    required this.searchByGeolocationUseCase,
   }) : super(const UserDataInitial());
 
   /// Load all user data from API
@@ -71,6 +74,39 @@ class UserDataCubit extends Cubit<UserDataState> {
     result.fold(
       onFailure: (failure) => emit(UserDataError(failure.message)),
       onSuccess: (geolocation) => emit(GeolocationLoaded(geolocation)),
+    );
+  }
+
+  /// Search user data by geolocation (exact match + 200 miles radius fallback)
+  Future<void> searchByGeolocation() async {
+    emit(const UserDataLoading());
+    
+    // First get geolocation
+    final geolocationResult = await getGeolocationUseCase();
+    
+    await geolocationResult.fold(
+      onFailure: (failure) async {
+        emit(UserDataError(failure.message));
+      },
+      onSuccess: (geolocation) async {
+        // Emit geolocation loaded first
+        emit(GeolocationLoaded(geolocation));
+        
+        // Then search for user data
+        emit(const UserDataLoading());
+        final searchResult = await searchByGeolocationUseCase(geolocation);
+        
+        searchResult.fold(
+          onFailure: (failure) => emit(UserDataError(failure.message)),
+          onSuccess: (results) {
+            if (results.isEmpty) {
+              emit(const UserDataError('No results found in your area'));
+            } else {
+              emit(SearchResultsLoaded(results, 'location'));
+            }
+          },
+        );
+      },
     );
   }
 }

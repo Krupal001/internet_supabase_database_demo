@@ -74,4 +74,22 @@ class UserDataRepositoryImpl implements UserDataRepository {
       return Result.failure(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Result<List<UserDataEntity>>> searchByGeolocation({
+    required String city,
+    required String state,
+    required int zip,
+  }) async {
+    try {
+      final results = await remoteDataSource.searchByGeolocation(
+        city: city,
+        state: state,
+        zip: zip,
+      );
+      return Result.success(results);
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
 }

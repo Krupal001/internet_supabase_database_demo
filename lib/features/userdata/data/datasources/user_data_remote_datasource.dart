@@ -12,6 +12,11 @@ abstract class UserDataRemoteDataSource {
   Future<UserDataModel> updateUserData(UserDataModel userData);
   Future<void> deleteUserData(String firstName);
   Future<GeolocationModel> getGeolocation();
+  Future<List<UserDataModel>> searchByGeolocation({
+    required String city,
+    required String state,
+    required int zip,
+  });
 }
 
 /// Implementation using HTTP API calls
@@ -126,9 +131,9 @@ class UserDataRemoteDataSourceImpl implements UserDataRemoteDataSource {
   @override
   Future<GeolocationModel> getGeolocation() async {
     try {
-      final url = Uri.parse('${ApiConfig.geolocationUrl}');
+      final url = Uri.parse('${ApiConfig.geolocationUrl}94.26.84.72');
       print('🌍 Fetching geolocation from: $url');
-      
+
       final response = await httpClient.get(url);
 
       print('📡 Response Status Code: ${response.statusCode}');
@@ -137,10 +142,10 @@ class UserDataRemoteDataSourceImpl implements UserDataRemoteDataSource {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
         print('✅ Geolocation Data: $jsonData');
-        
+
         final geolocationModel = GeolocationModel.fromJson(jsonData);
         print('🎯 Parsed Geolocation Model: ${geolocationModel.toJson()}');
-        
+
         return geolocationModel;
       } else {
         throw Exception(
@@ -150,6 +155,90 @@ class UserDataRemoteDataSourceImpl implements UserDataRemoteDataSource {
     } catch (e) {
       print('❌ Error fetching geolocation: $e');
       throw Exception('Failed to fetch geolocation data: $e');
+    }
+  }
+
+  @override
+  Future<List<UserDataModel>> searchByGeolocation({
+    required String city,
+    required String state,
+    required int zip,
+  }) async {
+    try {
+      // Step 1: Try exact location match (city, state, zip)
+      final exactQueryParams = {
+        'city': 'eq.$city',
+        'state': 'eq.$state',
+        'zip': 'eq.$zip',
+        'select': '*',
+      };
+
+      final exactUri = Uri.parse(
+        ApiConfig.userDataUrl,
+      ).replace(queryParameters: exactQueryParams);
+
+      print(
+        '🔍 Step 1: Searching by exact location: city=$city, state=$state, zip=$zip',
+      );
+      print('📍 Query URL: $exactUri');
+
+      final exactResponse = await httpClient.get(
+        exactUri,
+        headers: ApiConfig.headers,
+      );
+
+      if (exactResponse.statusCode == 200) {
+        final List<dynamic> exactJsonList = json.decode(exactResponse.body);
+
+        if (exactJsonList.isNotEmpty) {
+          print(
+            '✅ Found ${exactJsonList.length} results with exact location match',
+          );
+          return exactJsonList
+              .map(
+                (json) => UserDataModel.fromJson(json as Map<String, dynamic>),
+              )
+              .toList();
+        }
+
+        // Step 2: No exact match found, search by state only
+        print('⚠️ No exact match found, searching by state only: $state');
+
+        final stateQueryParams = {'state': 'eq.$state', 'select': '*'};
+
+        final stateUri = Uri.parse(
+          ApiConfig.userDataUrl,
+        ).replace(queryParameters: stateQueryParams);
+
+        print('📍 Fallback Query URL: $stateUri');
+
+        final stateResponse = await httpClient.get(
+          stateUri,
+          headers: ApiConfig.headers,
+        );
+
+        if (stateResponse.statusCode == 200) {
+          final List<dynamic> stateJsonList = json.decode(stateResponse.body);
+          print('✅ Found ${stateJsonList.length} results in state: $state');
+
+          return stateJsonList
+              .map(
+                (json) => UserDataModel.fromJson(json as Map<String, dynamic>),
+              )
+              .toList();
+        } else {
+          throw Exception(
+            'Failed to search by state: ${stateResponse.statusCode}',
+          );
+        }
+      } else {
+        throw Exception(
+          'Failed to search by location: ${exactResponse.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('❌ Error searching by geolocation: $e');
+      throw Exception('Failed to search by geolocation: $e');
     }
   }
 }

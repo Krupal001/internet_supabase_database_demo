@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_db/features/userdata/domain/entities/geolocation_entity.dart';
+import 'package:supabase_db/features/userdata/domain/entities/user_data_entity.dart';
 import 'package:supabase_db/features/userdata/presentation/cubit/user_data_cubit.dart';
 import 'package:supabase_db/features/userdata/presentation/cubit/user_data_state.dart';
 
@@ -24,6 +25,10 @@ class _InternetPageState extends State<InternetPage> {
     context.read<UserDataCubit>().getGeolocation();
   }
 
+  void _searchByLocation() {
+    context.read<UserDataCubit>().searchByGeolocation();
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<UserDataCubit, UserDataState>(
@@ -41,14 +46,27 @@ class _InternetPageState extends State<InternetPage> {
         }
 
         final isLoading = state is UserDataLoading;
-        final geolocation = state is GeolocationLoaded ? state.geolocation : null;
-        
-        return _buildContent(context, isLoading, geolocation);
+
+        final geolocation = state is GeolocationLoaded
+            ? state.geolocation
+            : null;
+        _ipController.text = geolocation?.query ?? '';
+
+        final searchResults = state is SearchResultsLoaded ? state.results : null;
+        final searchType = state is SearchResultsLoaded ? state.searchType : null;
+
+        return _buildContent(context, isLoading, geolocation, searchResults, searchType);
       },
     );
   }
 
-  Widget _buildContent(BuildContext context, bool isLoading, GeolocationEntity? geolocation) {
+  Widget _buildContent(
+    BuildContext context,
+    bool isLoading,
+    GeolocationEntity? geolocation,
+    List<UserDataEntity>? searchResults,
+    String? searchType,
+  ) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Internet Page'),
@@ -192,7 +210,7 @@ class _InternetPageState extends State<InternetPage> {
                         ),
                         const SizedBox(height: 40),
                         ElevatedButton(
-                          onPressed: isLoading ? null : () {},
+                          onPressed: isLoading ? null : _searchByLocation,
                           style: ElevatedButton.styleFrom(
                             fixedSize: const Size(200, 50),
                             backgroundColor: Colors.cyan,
@@ -213,8 +231,8 @@ class _InternetPageState extends State<InternetPage> {
                                   ),
                                 )
                               : const Text(
-                                  'Submit',
-                                  style: TextStyle(fontSize: 20),
+                                  'Search by Location',
+                                  style: TextStyle(fontSize: 18),
                                 ),
                         ),
                       ],
@@ -222,6 +240,58 @@ class _InternetPageState extends State<InternetPage> {
                   ),
                 ),
               ),
+
+              // Search Results Section
+              if (searchResults != null && searchResults.isNotEmpty) ...[
+                const SizedBox(height: 30),
+                Text(
+                  'Search Results (${searchResults.length} found)',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ...searchResults.map((userData) => Card(
+                  margin: const EdgeInsets.only(bottom: 15),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    title: Text(
+                      '${userData.firstName} ${userData.lastName}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        Text('DOB: ${userData.dob}'),
+                        Text('City: ${userData.city}'),
+                        Text('State: ${userData.state}'),
+                        Text('Zip: ${userData.zip}'),
+                      ],
+                    ),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.cyan,
+                      child: Text(
+                        userData.firstName[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                )).toList(),
+              ],
             ],
           ),
         ),

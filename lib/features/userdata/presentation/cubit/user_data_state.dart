@@ -50,6 +50,17 @@ class GeolocationLoaded extends UserDataState {
   List<Object> get props => [geolocation];
 }
 
+/// Search results loaded
+class SearchResultsLoaded extends UserDataState {
+  final List<UserDataEntity> results;
+  final String searchType; // 'exact' or 'radius'
+
+  const SearchResultsLoaded(this.results, this.searchType);
+
+  @override
+  List<Object> get props => [results, searchType];
+}
+
 /// Success state (for create/update/delete operations)
 class UserDataSuccess extends UserDataState {
   final String message;

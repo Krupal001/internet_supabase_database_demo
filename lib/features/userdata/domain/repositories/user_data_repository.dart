@@ -22,4 +22,12 @@ abstract class UserDataRepository {
 
   /// Get geolocation data
   Future<Result<GeolocationEntity>> getGeolocation();
+
+  /// Search user data by location with fallback
+  /// First tries exact match (city, state, zip), then falls back to state-only
+  Future<Result<List<UserDataEntity>>> searchByGeolocation({
+    required String city,
+    required String state,
+    required int zip,
+  });
 }
