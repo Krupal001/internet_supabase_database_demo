@@ -6,6 +6,7 @@ import '../../features/userdata/domain/repositories/user_data_repository.dart';
 import '../../features/userdata/domain/usecases/create_userdata_usecase.dart';
 import '../../features/userdata/domain/usecases/delete_userdata_usecase.dart';
 import '../../features/userdata/domain/usecases/get_all_userdata_usecase.dart';
+import '../../features/userdata/domain/usecases/get_geolocation_usecase.dart';
 import '../../features/userdata/presentation/cubit/user_data_cubit.dart';
 
 /// Service locator for dependency injection
@@ -24,6 +25,7 @@ Future<void> initializeDependencies() async {
       getAllUserDataUseCase: sl(),
       createUserDataUseCase: sl(),
       deleteUserDataUseCase: sl(),
+      getGeolocationUseCase: sl(),
     ),
   );
 
@@ -31,6 +33,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GetAllUserDataUseCase(sl()));
   sl.registerLazySingleton(() => CreateUserDataUseCase(sl()));
   sl.registerLazySingleton(() => DeleteUserDataUseCase(sl()));
+  sl.registerLazySingleton(() => GetGeolocationUseCase(sl()));
 
   // Repository
   sl.registerLazySingleton<UserDataRepository>(

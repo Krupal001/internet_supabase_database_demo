@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:supabase_db/features/userdata/data/models/geolocation_model.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../models/user_data_model.dart';
 
@@ -10,6 +11,7 @@ abstract class UserDataRemoteDataSource {
   Future<UserDataModel> createUserData(UserDataModel userData);
   Future<UserDataModel> updateUserData(UserDataModel userData);
   Future<void> deleteUserData(String firstName);
+  Future<GeolocationModel> getGeolocation();
 }
 
 /// Implementation using HTTP API calls
@@ -118,6 +120,36 @@ class UserDataRemoteDataSourceImpl implements UserDataRemoteDataSource {
       }
     } catch (e) {
       throw Exception('Failed to delete user data: $e');
+    }
+  }
+
+  @override
+  Future<GeolocationModel> getGeolocation() async {
+    try {
+      final url = Uri.parse('${ApiConfig.geolocationUrl}');
+      print('🌍 Fetching geolocation from: $url');
+      
+      final response = await httpClient.get(url);
+
+      print('📡 Response Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        print('✅ Geolocation Data: $jsonData');
+        
+        final geolocationModel = GeolocationModel.fromJson(jsonData);
+        print('🎯 Parsed Geolocation Model: ${geolocationModel.toJson()}');
+        
+        return geolocationModel;
+      } else {
+        throw Exception(
+          'Failed to fetch geolocation data: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('❌ Error fetching geolocation: $e');
+      throw Exception('Failed to fetch geolocation data: $e');
     }
   }
 }

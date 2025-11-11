@@ -1,3 +1,5 @@
+import 'package:supabase_db/features/userdata/domain/entities/geolocation_entity.dart';
+
 import '../../../../core/utils/result.dart';
 import '../entities/user_data_entity.dart';
 
@@ -17,4 +19,7 @@ abstract class UserDataRepository {
 
   /// Delete user data by first name
   Future<Result<void>> deleteUserData(String firstName);
+
+  /// Get geolocation data
+  Future<Result<GeolocationEntity>> getGeolocation();
 }

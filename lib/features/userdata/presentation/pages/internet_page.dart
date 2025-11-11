@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_db/features/userdata/domain/entities/geolocation_entity.dart';
+import 'package:supabase_db/features/userdata/presentation/cubit/user_data_cubit.dart';
+import 'package:supabase_db/features/userdata/presentation/cubit/user_data_state.dart';
 
 class InternetPage extends StatefulWidget {
   const InternetPage({super.key});
@@ -10,8 +14,6 @@ class InternetPage extends StatefulWidget {
 class _InternetPageState extends State<InternetPage> {
   final TextEditingController _ipController = TextEditingController();
 
-  bool _isLoading = false;
-
   @override
   void dispose() {
     _ipController.dispose();
@@ -19,20 +21,34 @@ class _InternetPageState extends State<InternetPage> {
   }
 
   void _getIpInfo() {
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        _isLoading = false;
-      });
-    });
+    context.read<UserDataCubit>().getGeolocation();
   }
 
   @override
   Widget build(BuildContext context) {
+    return BlocBuilder<UserDataCubit, UserDataState>(
+      builder: (context, state) {
+        // Show error snackbar
+        if (state is UserDataError) {
+          Future.microtask(() {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          });
+        }
+
+        final isLoading = state is UserDataLoading;
+        final geolocation = state is GeolocationLoaded ? state.geolocation : null;
+        
+        return _buildContent(context, isLoading, geolocation);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, bool isLoading, GeolocationEntity? geolocation) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Internet Page'),
@@ -142,7 +158,7 @@ class _InternetPageState extends State<InternetPage> {
 
                             // Get IP Button
                             ElevatedButton(
-                              onPressed: _isLoading ? null : _getIpInfo,
+                              onPressed: isLoading ? null : _getIpInfo,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.cyan,
                                 foregroundColor: Colors.white,
@@ -152,7 +168,7 @@ class _InternetPageState extends State<InternetPage> {
                                 ),
                                 elevation: 5,
                               ),
-                              child: _isLoading
+                              child: isLoading
                                   ? const SizedBox(
                                       width: 24,
                                       height: 24,
@@ -176,7 +192,7 @@ class _InternetPageState extends State<InternetPage> {
                         ),
                         const SizedBox(height: 40),
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _getIpInfo,
+                          onPressed: isLoading ? null : () {},
                           style: ElevatedButton.styleFrom(
                             fixedSize: const Size(200, 50),
                             backgroundColor: Colors.cyan,
@@ -187,7 +203,7 @@ class _InternetPageState extends State<InternetPage> {
                             ),
                             elevation: 5,
                           ),
-                          child: _isLoading
+                          child: isLoading
                               ? const SizedBox(
                                   width: 24,
                                   height: 24,

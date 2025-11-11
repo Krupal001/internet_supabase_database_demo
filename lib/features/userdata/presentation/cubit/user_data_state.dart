@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:supabase_db/features/userdata/domain/entities/geolocation_entity.dart';
 import '../../domain/entities/user_data_entity.dart';
 
 /// Base state for user data
@@ -37,6 +38,16 @@ class UserDataLoaded extends UserDataState {
 
   @override
   List<Object> get props => [userData];
+}
+
+/// Geolocation loaded
+class GeolocationLoaded extends UserDataState {
+  final GeolocationEntity geolocation;
+
+  const GeolocationLoaded(this.geolocation);
+
+  @override
+  List<Object> get props => [geolocation];
 }
 
 /// Success state (for create/update/delete operations)

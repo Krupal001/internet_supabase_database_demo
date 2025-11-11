@@ -1,3 +1,5 @@
+import 'package:supabase_db/features/userdata/domain/entities/geolocation_entity.dart';
+
 import '../../../../core/error/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../domain/entities/user_data_entity.dart';
@@ -58,6 +60,16 @@ class UserDataRepositoryImpl implements UserDataRepository {
     try {
       await remoteDataSource.deleteUserData(firstName);
       return Result.success(null);
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<GeolocationEntity>> getGeolocation() async {
+    try {
+      final geolocation = await remoteDataSource.getGeolocation();
+      return Result.success(geolocation);
     } catch (e) {
       return Result.failure(ServerFailure(e.toString()));
     }
